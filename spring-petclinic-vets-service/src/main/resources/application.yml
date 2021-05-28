@@ -1,41 +1,8 @@
 spring:
-  cloud:
-    loadbalancer:
-      ribbon:
-        enabled: false
-    gateway:
-      httpclient:
-        connect-timeout: 1000
-        response-timeout: 1s
-      routes:
-        - id: vets-service
-          uri: lb://vets-service
-          predicates:
-            - Path=/api/vet/**
-          filters:
-            - StripPrefix=2
-        - id: visits-service
-          uri: lb://visits-service
-          predicates:
-            - Path=/api/visit/**
-          filters:
-            - StripPrefix=2
-            - name: Retry
-              args:
-                retries: 3
-                statuses: BAD_GATEWAY,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                backoff:
-                  firstBackoff: 100ms
-                  maxBackoff: 1000ms
-                  factor: 2
-                  baseOnPreviousValue: false            
-        - id: customers-service
-          uri: lb://customers-service
-          predicates:
-            - Path=/api/customer/**
-          filters:
-            - StripPrefix=2
+  cache:
+    cache-names: vets
+  profiles:
+    active: production
 
 management.health.circuitbreakers.enabled: true
 # actuator를 통해 circuitbraker 상태를 확인하기 위해 설정
@@ -54,12 +21,12 @@ resilience4j.circuitbreaker:
       waitDurationInOpenState: 10s
       # 서킷의 상태가 Open에서 Half-open으로 변경되기 전에 Circuit Breaker가 기다리는 시간
   instances:
-    testCircuitBreaker:
+    vetCircuitBreaker:
       baseConfig: default
 
 resilience4j.bulkhead:
   instances:
-    testCircuitBreaker:
+    vetCircuitBreaker:
       maxConcurrentCalls: 25
       # 허가된 동시 실행 수를 25로 지정
       maxWaitDuration: 0
@@ -67,7 +34,7 @@ resilience4j.bulkhead:
 
 resilience4j.ratelimiter:
   instances:
-    testCircuitBreaker:
+    vetCircuitBreaker:
       limitForPeriod: 50
       # limitRefreshPeriod 기간 동안 허용되는 요청 수
       limitRefreshPeriod: 500ns
@@ -79,7 +46,7 @@ resilience4j.ratelimiter:
 # fallback method가 정의되어있지 않은 에러의 경우에만 재시도 한다.
 resilience4j.retry:
   instances:
-    testCircuitBreaker:
+    vetCircuitBreaker:
       maxRetryAttempts: 3
       # 최대 재시도 수
       waitDuration: 500ms
@@ -91,7 +58,6 @@ resilience4j.retry:
 
 resilience4j.timelimiter:
   instances:
-    testCircuitBreaker:
+    vetCircuitBreaker:
       timeoutDuration: 1s
       # 원격 서버로부터 해당 시간안에 응답이 오는 것을 제한
-            

@@ -15,8 +15,8 @@
  */
 package org.springframework.samples.petclinic.api;
 
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import io.github.resilience4j.timelimiter.TimeLimiterConfig;
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -36,7 +36,8 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
-import java.time.Duration;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
 
 
 /**
@@ -84,7 +85,7 @@ public class ApiGatewayApplication {
     public Customizer<ReactiveResilience4JCircuitBreakerFactory> defaultCustomizer() {
         return factory -> factory.configureDefault(id -> new Resilience4JConfigBuilder(id)
             .circuitBreakerConfig(CircuitBreakerConfig.ofDefaults())
-            .timeLimiterConfig(TimeLimiterConfig.custom().timeoutDuration(Duration.ofSeconds(4)).build())
+            .timeLimiterConfig(TimeLimiterConfig.custom().timeoutDuration(Duration.ofSeconds(1)).build())
             .build());
     }
 }

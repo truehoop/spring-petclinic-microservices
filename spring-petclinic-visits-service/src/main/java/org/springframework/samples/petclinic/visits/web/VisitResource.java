@@ -16,12 +16,9 @@
 package org.springframework.samples.petclinic.visits.web;
 
 import java.util.List;
+
 import javax.validation.Valid;
 
-import io.micrometer.core.annotation.Timed;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.samples.petclinic.visits.model.Visit;
 import org.springframework.samples.petclinic.visits.model.VisitRepository;
@@ -32,6 +29,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.micrometer.core.annotation.Timed;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Juergen Hoeller
@@ -47,6 +50,8 @@ import org.springframework.web.bind.annotation.RestController;
 class VisitResource {
 
     private final VisitRepository visitRepository;
+    private final TestService testService;
+    private final VetServiceClient vetService;
 
     @PostMapping("owners/*/pets/{petId}/visits")
     @ResponseStatus(HttpStatus.CREATED)
@@ -59,15 +64,43 @@ class VisitResource {
         return visitRepository.save(visit);
     }
 
-    @GetMapping("owners/*/pets/{petId}/visits")
+   @GetMapping("owners/*/pets/{petId}/visits")
    public List<Visit> visits(@PathVariable("petId") int petId) {
-        return visitRepository.findByPetId(petId);
+    	return visitRepository.findByPetId(petId);
+    }
+   
+   @GetMapping("/fail")
+   public Mono<String> getFail() {
+    	return testService.getFailHello();
+    }
+   
+   @GetMapping("/success")
+   public Mono<String> getSuccess() {
+    	return testService.getSuccessHello();
     }
 
-    @GetMapping("pets/visits")
+   @GetMapping("pets/visits")
    public Visits visitsMultiGet(@RequestParam("petId") List<Integer> petIds) {
-        final List<Visit> byPetIdIn = visitRepository.findByPetIdIn(petIds);
-        return new Visits(byPetIdIn);
+        final List<Visit> byPetIdIn = testService.getPets(petIds);
+        log.info("visit is comming~");
+//        Mono<String> test = vetService.getVets();
+//        Mono<String> test2 = testService.getDataFromRemoteServer();
+//        
+        Mono<String> test = null;
+        if(petIds.get(0) == 1)
+        	test = testService.getDataFromRemoteServerSuccess();
+        else if(petIds.get(0) == 2)
+        	test = testService.getDataFromRemoteServerFail();
+        else if(petIds.get(0) == 3)
+        	test = testService.getFailHello();
+        
+        test.subscribe(result -> {
+	          log.info("{}", result);
+	      }, e -> {
+	        log.info("{}", e.getMessage());
+	      });
+        
+    	return new Visits(byPetIdIn);
     }
 
     @Value
